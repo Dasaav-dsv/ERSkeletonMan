@@ -41,4 +41,56 @@ namespace HkModifier {
 
 		float t = 0.0f;
 	};
+
+	namespace SpEffect {
+		// Scales the bone's length, but only when a chosen SpEffect is applied to the character.
+		class ScaleLength : public Modifier {
+		public:
+			ScaleLength(float scale, int spEffectID) : scale(std::isfinite(scale) ? scale : 1.0f), ID(spEffectID) {}
+			virtual ScaleLength* clone() { return new ScaleLength(*this); }
+
+		private:
+			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec *= this->scale; }
+
+			float scale;
+			int ID;
+		};
+
+		// Scales the bone's size, but only when a chosen SpEffect is applied to the character.
+		class ScaleSize : public Modifier {
+		public:
+			ScaleSize(V4D scale, int spEffectID) : scale(scale.isfinite() ? scale : V4D(1.0f)), ID(spEffectID) {}
+			virtual ScaleSize* clone() { return new ScaleSize(*this); }
+
+			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyScale = _mm_mul_ps(bData.xzyScale, this->scale); }
+
+			V4D scale;
+			int ID;
+		};
+
+		// Offsets the bone in space by a 3D vector, but only when a chosen SpEffect is applied to the character.
+		class Offset : public Modifier {
+		public:
+			Offset(V4D offset, int spEffectID) : offset(offset.isfinite() ? offset.flatten<V4D::CoordinateAxis::W>() : V4D(0.0f)), ID(spEffectID) {}
+			virtual Offset* clone() { return new Offset(*this); }
+
+			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec += offset.qTransform(bone->getWorldQ()); }
+
+			V4D offset;
+			int ID;
+		};
+
+		// Rotates the bone by a quaternion, but only when a chosen SpEffect is applied to the character.
+		// Tip: use this site https://www.andre-gaschler.com/rotationconverter/
+		class Rotate : public Modifier {
+		public:
+			Rotate(V4D q, int spEffectID) : q(q.isfinite() && !q.iszero() ? q.normalize() : V4D(0.0f, 0.0f, 0.0f, 1.0f)), ID(spEffectID) {}
+			virtual Rotate* clone() { return new Rotate(*this); }
+
+			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.qSpatial = bData.qSpatial.qMul(q).normalize(); }
+
+			V4D q;
+			int ID;
+		};
+	}
 }
