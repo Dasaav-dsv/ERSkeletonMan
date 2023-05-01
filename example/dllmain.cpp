@@ -64,6 +64,11 @@ void onAttach()
     playerTarget.addBoneModifier(HkModifier::ScaleSize(0.9f), "Head");
     playerTarget.addBoneModifier(HkModifier::ScaleSize(1.2f));
 
+    // Conditional SpEffect modifiers - these will only be applied if SpEffect 3245 is present.
+    // (SpEffect 3245 is applied on equipping the Lantern)
+    playerTarget.addBoneModifier(HkModifier::SpEffect::Offset(V4D(0.0f, 0.25f, 0.0f), 3245), "RootPos");
+    playerTarget.addBoneModifier(HkModifier::SpEffect::Rotate(V4D(0.0f, 0.0f, 1.0f, 0.0f), 3245), "RootPos");
+
     // Torrent example, targets all Torrent instances (in mods like Seamless Co-op)
     auto& torrentTarget = SkeletonMan::makeTarget(ChrMatcher::Torrent(true));
     torrentTarget.addSkeletonModifier(HkModifier::ScaleLength(0.8f));
