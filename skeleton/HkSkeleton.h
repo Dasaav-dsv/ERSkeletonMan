@@ -70,7 +70,8 @@ public:
 		V4D getWorldPos()
 		{
 			V4D localPos = this->getBoneData().xzyVec;
-			if (!this->getParent()) {
+			HkBone* parent = this->getParent();
+			if (!parent || parent == this) {
 				return localPos + this->getSkeleton()->getChrPos();
 			}
 			else {
@@ -82,7 +83,8 @@ public:
 		V4D getWorldQ()
 		{
 			V4D localQ = this->getBoneData().qSpatial;
-			if (!this->getParent()) {
+			HkBone* parent = this->getParent();
+			if (!parent || parent == this) {
 				return localQ;
 			}
 			else {
@@ -212,7 +214,7 @@ public:
 	}
 
 	~HkSkeleton() {};
-	uint8_t* getChrIns() { return reinterpret_cast<uint8_t*>(ChrIns); }
+	void* getChrIns() { return ChrIns; }
 	HkBone::HkBoneData* getBoneData() { return this->boneData; }
 	const V4D& getChrPos() { return this->chrPos; }
 	const V4D& getChrQ() { return this->chrQ; }
