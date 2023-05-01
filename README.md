@@ -1,4 +1,4 @@
-# Elden Ring Skeleton Mananager
+# Elden Ring Skeleton Manager
 An Elden Ring runtime skeleton modification header-only library.
 # What is it
 The Elden Ring Skeleton Manager (or simply SkeletonMan) is a C++ library that modifies the bones of any Elden Ring character at runtime.
