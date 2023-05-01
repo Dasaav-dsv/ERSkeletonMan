@@ -20,6 +20,33 @@ namespace HkModifier {
 		virtual Modifier* clone() = 0;
 		virtual void onApply(Bone*, BoneData&) = 0;
 	};
+
+	namespace Impl {
+		// TODO: map out the unk offsets.
+		struct SpEffectNode {
+			void* pSpEffectParam;
+			int id;
+			int unk00[9];
+			SpEffectNode* next;
+			SpEffectNode* previous;
+			float effectEndurance;
+			float motionInterval;
+			float effectLife;
+			float unk01[3];
+			int unk02;
+		};
+
+		// Iterate over all SpEffect entries in the linked list to match ours.
+		inline bool checkSpEffectID(void* ChrIns, int spEffectID)
+		{
+			SpEffectNode* current = PointerChain::make<SpEffectNode*>(ChrIns, 0x178, 0x8u).dereference(nullptr);
+			while (!!current) {
+				if (current->id == spEffectID) return true;
+				current = current->next;
+			}
+			return false;
+		}
+	}
 }
 
 #include "BaseModifiers.h"
