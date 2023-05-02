@@ -14,11 +14,12 @@ namespace HkModifier {
 	public:
 		virtual ~Modifier() {};
 
-		void apply(Bone* bone) { onApply(bone, bone->getBoneData()); }
+		bool apply(Bone* bone) { return onApply(bone, bone->getBoneData()); }
 
 		// These two functions must be defined in a derived modifier class for it to be valid.
 		virtual Modifier* clone() = 0;
-		virtual void onApply(Bone*, BoneData&) = 0;
+		// The return value signfies whether the modifier should be only applied once when applied as a skeleton modifier.
+		virtual bool onApply(Bone*, BoneData&) = 0;
 	};
 
 	namespace Impl {

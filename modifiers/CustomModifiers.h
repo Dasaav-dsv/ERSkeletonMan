@@ -13,13 +13,15 @@ namespace HkModifier {
 		virtual CapriSun* clone() { return new CapriSun(*this); }
 
 		// Any custom modifier must have this function defined with this exact signature.
-		virtual void onApply(Bone* bone, BoneData& bData)
+		virtual bool onApply(Bone* bone, BoneData& bData)
 		{
 			bData.qSpatial = bData.qSpatial.qMul(qAdd).normalize();
 			qAdd = qAdd.qMul(q).normalize();
 
 			this->t += *PointerChain::make<float>(bone->getSkeleton()->getChrIns(), 0xB0) * 1.75f;
 			bData.xzyVec += V4D(sinf(this->t), 0.0f, cosf(this->t)) * 0.75f;
+
+			return true;
 		}
 
 		V4D q;
@@ -33,10 +35,12 @@ namespace HkModifier {
 		Floss() {}
 		virtual Floss* clone() { return new Floss(*this); }
 
-		virtual void onApply(Bone* bone, BoneData& bData)
+		virtual bool onApply(Bone* bone, BoneData& bData)
 		{
 			bData.qSpatial = bData.qSpatial.qMul(V4D(0.0f, -0.1961161f, 0.0f, 0.9805807f)).qMul(V4D(0.0f, 0.0f, 0.5144958f, 0.8574929f).qPow(sinf(this->t)));
 			this->t += *PointerChain::make<float>(bone->getSkeleton()->getChrIns(), 0xB0) * 8.0f;
+
+			return false;
 		}
 
 		float t = 0.0f;
@@ -50,7 +54,7 @@ namespace HkModifier {
 			virtual ScaleLength* clone() { return new ScaleLength(*this); }
 
 		private:
-			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec *= this->scale; }
+			virtual bool onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec *= this->scale; }
 
 			float scale;
 			int ID;
@@ -62,7 +66,13 @@ namespace HkModifier {
 			ScaleSize(V4D scale, int spEffectID) : scale(scale.isfinite() ? scale : V4D(1.0f)), ID(spEffectID) {}
 			virtual ScaleSize* clone() { return new ScaleSize(*this); }
 
-			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyScale = _mm_mul_ps(bData.xzyScale, this->scale); }
+			virtual bool onApply(Bone* bone, BoneData& bData) 
+			{ 
+				if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) {
+					bData.xzyScale = _mm_mul_ps(bData.xzyScale, this->scale);
+				}
+				return true; 
+			}
 
 			V4D scale;
 			int ID;
@@ -74,7 +84,13 @@ namespace HkModifier {
 			Offset(V4D offset, int spEffectID) : offset(offset.isfinite() ? offset.flatten<V4D::CoordinateAxis::W>() : V4D(0.0f)), ID(spEffectID) {}
 			virtual Offset* clone() { return new Offset(*this); }
 
-			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec += offset.qTransform(bone->getWorldQ()); }
+			virtual bool onApply(Bone* bone, BoneData& bData) 
+			{ 
+				if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) {
+					bData.xzyVec += offset.qTransform(bone->getWorldQ());
+				}
+				return false;
+			}
 
 			V4D offset;
 			int ID;
@@ -87,7 +103,13 @@ namespace HkModifier {
 			Rotate(V4D q, int spEffectID) : q(q.isfinite() && !q.iszero() ? q.normalize() : V4D(0.0f, 0.0f, 0.0f, 1.0f)), ID(spEffectID) {}
 			virtual Rotate* clone() { return new Rotate(*this); }
 
-			virtual void onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.qSpatial = bData.qSpatial.qMul(q).normalize(); }
+			virtual bool onApply(Bone* bone, BoneData& bData) 
+			{ 
+				if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) {
+					bData.qSpatial = bData.qSpatial.qMul(q).normalize();
+				}
+				return false;
+			}
 
 			V4D q;
 			int ID;

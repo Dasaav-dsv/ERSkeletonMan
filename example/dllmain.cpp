@@ -25,12 +25,12 @@ void onAttach()
     // This scales all of the bones to half their length, scaling the character down.
     exampleTarget1.addSkeletonModifier(HkModifier::ScaleLength(0.5f));
     // The "size" of a bone is different from its length, as it represents its thickness.
-    // The children of scaled bones also get scaled, even if you only added the modifier to the parent bone.
-    // This means that if you want to scale the size (not the length) of a skeleton,
-    // you need to apply it to JUST the root bone, since all the other bones inherit the scaling.
-    exampleTarget1.addBoneModifier(HkModifier::ScaleSize(0.5f), 0); // IMPORTANT, apply to root (first bone - index 0)
+    exampleTarget1.addSkeletonModifier(HkModifier::ScaleSize(0.5f));
     exampleTarget1.addBoneModifier(HkModifier::ScaleLength(2.0f), "Head");
     exampleTarget1.addBoneModifier(HkModifier::ScaleSize(2.0f), "Head");
+    // It's good practice to disable cloth physics when scaling characters.
+    // Cloth physics will not work as expected at small or large scaling values.
+    exampleTarget1.addSkeletonModifier(HkModifier::DisableClothPhysics());
 
     // ThinkParamID example:
     auto& exampleTarget2 = SkeletonMan::makeTarget(ChrMatcher::ThinkParamID(48100900)); // Target Erdtree Avatars with this ThinkParam
@@ -42,7 +42,7 @@ void onAttach()
     // NPCParamID example:
     auto& exampleTarget3 = SkeletonMan::makeTarget(ChrMatcher::NPCParamID(30200014));
     exampleTarget3.addSkeletonModifier(HkModifier::ScaleLength(1.5f));
-    exampleTarget3.addBoneModifier(HkModifier::ScaleSize(1.5f));
+    exampleTarget3.addSkeletonModifier(HkModifier::ScaleSize(1.5f));
 
     // Map name example, this applies to every entity on the map:
     auto& exampleTarget4 = SkeletonMan::makeTarget(ChrMatcher::Map(L"m15_00_00_00"));
@@ -62,7 +62,7 @@ void onAttach()
     playerTarget.addBoneModifier(HkModifier::ScaleLength(1.1f), "Neck", "Head");
     playerTarget.addSkeletonModifier(HkModifier::ScaleLength(1.1f));
     playerTarget.addBoneModifier(HkModifier::ScaleSize(0.9f), "Head");
-    playerTarget.addBoneModifier(HkModifier::ScaleSize(1.2f));
+    playerTarget.addSkeletonModifier(HkModifier::ScaleSize(1.2f));
 
     // Conditional SpEffect modifiers - these will only be applied if SpEffect 3245 is present.
     // (SpEffect 3245 is applied on equipping the Lantern)
@@ -71,8 +71,11 @@ void onAttach()
 
     // Torrent example, targets all Torrent instances (in mods like Seamless Co-op)
     auto& torrentTarget = SkeletonMan::makeTarget(ChrMatcher::Torrent(true));
-    torrentTarget.addSkeletonModifier(HkModifier::ScaleLength(0.8f));
-    torrentTarget.addBoneModifier(HkModifier::ScaleSize(0.8f));
+    torrentTarget.addSkeletonModifier(HkModifier::ScaleLength(0.2f));
+    torrentTarget.addSkeletonModifier(HkModifier::ScaleSize(0.2f));
+    torrentTarget.addSkeletonModifier(HkModifier::DisableClothPhysics());
+    // Adding a PLAYER modifier that will disable cloth physics when riding Torrent.
+    playerTarget.addSkeletonModifier(HkModifier::Mounted::DisableClothPhysics());
 
     SkeletonMan::instance().initialize();
 }
