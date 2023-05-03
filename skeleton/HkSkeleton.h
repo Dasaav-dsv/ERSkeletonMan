@@ -63,7 +63,7 @@ public:
 		int16_t getIndex() const { return this->index; }
 		int16_t getID() const { return this->id; }
 		// Modifiers can only be applied to bones, a skeleton modifier just means that a modifier is applied to every bone.
-		inline void applyModifier(HkModifier::Modifier* modifier);
+		inline bool applyModifier(HkModifier::Modifier* modifier);
 		inline void applyAllModifiers();
 
 		// Calculates the world coordinates of a bone by recursively adding up bone offsets.
@@ -235,7 +235,7 @@ inline int HkObj::addModifier(HkModifier::Modifier* modifier)
 	return this->modifiers.size() - 1;
 }
 
-inline void HkSkeleton::HkBone::applyModifier(HkModifier::Modifier* modifier)
+inline bool HkSkeleton::HkBone::applyModifier(HkModifier::Modifier* modifier)
 {
 	if (!!modifier) modifier->apply(this);
 }
