@@ -175,9 +175,7 @@ public:
 
 			// Each bone struct is 0x30 bytes long.
 			// The parent and child ids are at +0x0 and +0x2 of each struct.
-			int currIndex = bone->getIndex();
-			int16_t parentIndex = (pBoneHierarchy + currIndex * 0x18)[0];
-			int16_t childIndex = (pBoneHierarchy + currIndex * 0x18)[1];
+			int16_t parentIndex = (pBoneHierarchy + bone->getIndex() * 0x18)[0];
 
 			// Assign parent and children bones by index.
 			if (parentIndex >= 0 && parentIndex < boneCount) {
