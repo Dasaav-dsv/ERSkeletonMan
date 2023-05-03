@@ -45,11 +45,9 @@ public:
 			V4D xzyScale;
 		};
 
-		// Bone id and index are separate identifiers:
-		// - the id is used to determine bone hierarchy and can be duplicate
-		// - the index represents the order of the bones in the skeleton and is unique
-		// Both are handled by the skeleton's constructor.
-		HkBone(HkSkeleton* skeleton, std::string name, const int16_t index, const int16_t id) : HkObj(), skeleton(skeleton), name(name), index(index), id(id) {}
+		// The bone index represents the order of the bones in the skeleton and is unique.
+		// It is handled by the skeleton's constructor.
+		HkBone(HkSkeleton* skeleton, std::string name, int16_t index) : HkObj(), skeleton(skeleton), name(name), index(index) {}
 		// Parent and child functions, setting the hierarchy is handled by the skeleton's constructor.
 		// A bone can have only one parent, but multiple children.
 		void setParent(HkBone* parent) { this->parent = parent; }
@@ -61,7 +59,6 @@ public:
 		HkBoneData& getBoneData() { return this->skeleton->getBoneData()[this->getIndex()]; }
 		const std::string& getName() const { return this->name; }
 		int16_t getIndex() const { return this->index; }
-		int16_t getID() const { return this->id; }
 		// Modifiers can only be applied to bones, a skeleton modifier just means that a modifier is applied to every bone.
 		inline bool applyModifier(HkModifier::Modifier* modifier);
 		inline void applyAllModifiers();
@@ -101,8 +98,7 @@ public:
 		V4D worldPos{};
 		V4D worldQ{};
 
-		int16_t index{};
-		int16_t id{};
+		int16_t index = 0;
 	};
 
 	// The layout of the HkaSkeleton struct as it is in the game's memory.
@@ -157,28 +153,20 @@ public:
 
 		// Iterate over each bone and create a HkBone instance.
 		for (int i = 0; i < boneCount; i++) {
-			int16_t id = hkaSkeleton->boneIDs[i];
 			const char* name = hkaSkeleton->boneNameLayout[i * 2];
-			bones[i] = std::make_unique<HkBone>(this, name, i, id);
+			bones[i] = std::make_unique<HkBone>(this, name, i);
 			HkBone* bone = bones[i].get();
 			this->skeletonMap[name] = bone;
-		}
-
-		int16_t* pBoneHierarchy = PointerChain::make<int16_t>(ChrIns, 0x50, 0x10u, 0x68u, 0x20u, 0x28u).get();
-		if (!pBoneHierarchy) {
-			throw std::runtime_error("Unable to reconstruct bone hierarchy.");
 		}
 
 		// Iterate over every HkBone instance and assign the parents and children.
 		for (auto& bone : bones) {
 			if (!bone) continue;
-
-			// Each bone struct is 0x30 bytes long.
-			// The parent and child ids are at +0x0 and +0x2 of each struct.
-			int16_t parentIndex = (pBoneHierarchy + bone->getIndex() * 0x18)[0];
+			
+			int16_t parentIndex = hkaSkeleton->boneIDs[bone->getIndex()];
 
 			// Assign parent and children bones by index.
-			if (parentIndex >= 0 && parentIndex < boneCount) {
+			if (parentIndex >= 0) {
 				HkBone* parent = bones[parentIndex].get();
 				if (!!parent) {
 					bone->setParent(parent);
