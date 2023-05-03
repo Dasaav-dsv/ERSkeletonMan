@@ -235,7 +235,7 @@ inline int HkObj::addModifier(HkModifier::Modifier* modifier)
 
 inline bool HkSkeleton::HkBone::applyModifier(HkModifier::Modifier* modifier)
 {
-	if (!!modifier) modifier->apply(this);
+	if (!!modifier) return modifier->apply(this);
 }
 
 inline void HkSkeleton::HkBone::applyAllModifiers()
