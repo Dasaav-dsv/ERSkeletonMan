@@ -54,7 +54,7 @@ public:
 		// A bone can have only one parent, but multiple children.
 		void setParent(HkBone* parent) { this->parent = parent; }
 		HkBone* getParent() { return this->parent; }
-		void setChildren(std::vector<HkBone*> children) { this->children = children; }
+		void addChild(HkBone* child) { this->children.push_back(child); }
 		auto& getChildren() { return this->children; }
 		HkSkeleton* getSkeleton() { return this->skeleton; }
 		// The bone data of a given bone is the bone data struct with the bone's index.
@@ -63,7 +63,7 @@ public:
 		int16_t getIndex() const { return this->index; }
 		int16_t getID() const { return this->id; }
 		// Modifiers can only be applied to bones, a skeleton modifier just means that a modifier is applied to every bone.
-		inline bool applyModifier(HkModifier::Modifier* modifier);
+		inline void applyModifier(HkModifier::Modifier* modifier);
 		inline void applyAllModifiers();
 
 		// Calculates the world coordinates of a bone by recursively adding up bone offsets.
@@ -152,28 +152,16 @@ public:
 		}
 
 		// After retrieving some important pointers, it's time to construct the bones.
-		this->hkBones.resize(boneCount);
-		// The bone ids are mapped to be used for hierarchy reconstruction.
-		std::vector<std::vector<HkBone*>> idMap = {};
-		idMap.resize(boneCount + 1);
+		auto& bones = this->hkBones;
+		bones.resize(boneCount);
 
 		// Iterate over each bone and create a HkBone instance.
 		for (int i = 0; i < boneCount; i++) {
 			int16_t id = hkaSkeleton->boneIDs[i];
 			const char* name = hkaSkeleton->boneNameLayout[i * 2];
-			this->hkBones[i] = std::make_unique<HkBone>(this, name, i, id);
-			HkBone* bone = this->hkBones[i].get();
+			bones[i] = std::make_unique<HkBone>(this, name, i, id);
+			HkBone* bone = bones[i].get();
 			this->skeletonMap[name] = bone;
-
-			try {
-				idMap.at(id + 1).push_back(bone);
-			}
-			catch (const std::out_of_range&) {
-				if (id > 0) {
-					idMap.resize(id + 1);
-					idMap.at(id + 1).push_back(bone);
-				}
-			}
 		}
 
 		int16_t* pBoneHierarchy = PointerChain::make<int16_t>(ChrIns, 0x50, 0x10u, 0x68u, 0x20u, 0x28u).get();
@@ -182,34 +170,23 @@ public:
 		}
 
 		// Iterate over every HkBone instance and assign the parents and children.
-		for (int i = 0; i < boneCount; i++) {
-			if (!this->hkBones[i]) continue;
+		for (auto& bone : bones) {
+			if (!bone) continue;
 
 			// Each bone struct is 0x30 bytes long.
 			// The parent and child ids are at +0x0 and +0x2 of each struct.
-			const int16_t parentID = (pBoneHierarchy + i * 0x18)[0] + 1;
-			const int16_t childID = (pBoneHierarchy + i * 0x18)[1] + 1;
+			int currIndex = bone->getIndex();
+			int16_t parentIndex = (pBoneHierarchy + currIndex * 0x18)[0];
+			int16_t childIndex = (pBoneHierarchy + currIndex * 0x18)[1];
 
-			// Assign parent and child bones by checking the id map for matching ids.
-			std::vector<HkBone*> parentBones;
-			try {
-				parentBones = idMap.at(parentID);
+			// Assign parent and children bones by index.
+			if (parentIndex >= 0 && parentIndex < boneCount) {
+				HkBone* parent = bones[parentIndex].get();
+				if (!!parent) {
+					bone->setParent(parent);
+					parent->addChild(bone.get());
+				}
 			}
-			catch (const std::out_of_range&) {
-				parentBones.clear();
-			}
-
-			if (!parentBones.empty()) this->hkBones[i]->setParent(parentBones.front());
-
-			std::vector<HkBone*> childBones;
-			try {
-				childBones = idMap.at(childID);
-			}
-			catch (const std::out_of_range&) {
-				continue;
-			}
-
-			if (!childBones.empty()) this->hkBones[i]->setChildren(childBones);
 		}
 	}
 
@@ -228,20 +205,13 @@ public:
 	// Updates all bones and applies all modifiers.
 	void updateAll()
 	{
-		// Place all pointers to skeleton modifiers in a separate vector.
-		std::vector<HkModifier::Modifier*> skeletonModifiers;
-		for (auto& modifier : this->getAllModifiers()) {
-			skeletonModifiers.push_back(modifier.get());
-		}
-		// Iterate over every bone in the skeleton and apply modifiers.
 		for (auto& bone : this->hkBones) {
 			if (!bone) continue;
 
 			// Get and apply all skeleton modifiers to every bone.
-			// Modifiers which are only applied once are removed after use.
-			for (auto& modifier : skeletonModifiers) {
+			for (auto& modifier : this->getAllModifiers()) {
 				if (!modifier) continue;
-				if (bone->applyModifier(modifier)) modifier = nullptr;
+				bone->applyModifier(modifier.get());
 			}
 
 			bone->applyAllModifiers();
@@ -265,9 +235,9 @@ inline int HkObj::addModifier(HkModifier::Modifier* modifier)
 	return this->modifiers.size() - 1;
 }
 
-inline bool HkSkeleton::HkBone::applyModifier(HkModifier::Modifier* modifier)
+inline void HkSkeleton::HkBone::applyModifier(HkModifier::Modifier* modifier)
 {
-	if (!!modifier) return modifier->apply(this);
+	if (!!modifier) modifier->apply(this);
 }
 
 inline void HkSkeleton::HkBone::applyAllModifiers()
