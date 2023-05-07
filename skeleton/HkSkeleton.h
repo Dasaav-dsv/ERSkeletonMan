@@ -57,6 +57,7 @@ public:
 		HkSkeleton* getSkeleton() { return this->skeleton; }
 		// The bone data of a given bone is the bone data struct with the bone's index.
 		HkBoneData& getBoneData() { return this->skeleton->getBoneData()[this->getIndex()]; }
+		HkBoneData& getDefaultBoneData() { return this->skeleton->getDefaultBoneData()[this->getIndex()]; }
 		const std::string& getName() const { return this->name; }
 		int16_t getIndex() const { return this->index; }
 		// Modifiers can only be applied to bones, a skeleton modifier just means that a modifier is applied to every bone.
@@ -76,16 +77,44 @@ public:
 			}
 		}
 
-		// Calculates the orientation of a bone by recursively multiplying orientation quaternions.
-		V4D getWorldQ()
+		V4D getDefaultWorldQImpl()
 		{
-			V4D localQ = this->getBoneData().qSpatial;
-			HkBone* parent = this->getParent();
-			if (!parent || parent == this) {
-				return localQ;
+			if (!!this->getParent()) {
+				return this->getParent()->getDefaultWorldQImpl().qMul(this->getDefaultBoneData().qSpatial);
 			}
 			else {
-				return parent->getWorldQ().qMul(localQ);
+				return this->getDefaultBoneData().qSpatial;
+			}
+		}
+
+		// Calculates the world orientation of a bone by recursively multiplying orientation quaternions.
+		template <bool firstCall = true> V4D getWorldQ()
+		{
+			V4D result;
+			HkBone* bone;
+
+			if constexpr (firstCall) {
+				bone = this->getParent();
+				if (!bone) {
+					return this->getDefaultBoneData().qSpatial;
+				}
+			}
+			else {
+				bone = this;
+			}
+
+			if (!!bone->getParent()) {
+				result = bone->getParent()->getWorldQ<false>().qMul(bone->getBoneData().qSpatial);
+			}
+			else {
+				result = this->getSkeleton()->getChrQ().qMul(bone->getBoneData().qSpatial);
+			}
+
+			if constexpr (firstCall) {
+				return result.qConjugate().qMul(this->getDefaultWorldQImpl());
+			}
+			else {
+				return result;
 			}
 		}
 
@@ -111,6 +140,8 @@ public:
 		int boneCount;
 		uint32_t : 32;
 		char** boneNameLayout;
+		uint64_t : 64;
+		HkBone::HkBoneData* defaultBoneData;
 	};
 
 	// Maps a character's skeleton and all its bones.
@@ -136,6 +167,9 @@ public:
 		int boneCount = hkaSkeleton->boneCount;
 		if (boneCount <= 0) {
 			throw std::runtime_error("Skeleton has invalid bone count.");
+		}
+		else {
+			this->defaultBoneData = hkaSkeleton->defaultBoneData;
 		}
 
 		uint8_t** pBoneDataLayout = PointerChain::make<uint8_t*>(pHkbCharacter, 0x38u, 0x0u).get();
@@ -179,6 +213,7 @@ public:
 	~HkSkeleton() {};
 	void* getChrIns() { return ChrIns; }
 	HkBone::HkBoneData* getBoneData() { return this->boneData; }
+	HkBone::HkBoneData* getDefaultBoneData() { return this->defaultBoneData; }
 	const V4D& getChrPos() { return this->chrPos; }
 	const V4D& getChrQ() { return this->chrQ; }
 	int getBoneCount() const { return this->hkBones.size(); }
@@ -209,6 +244,7 @@ private:
 	const V4D& chrPos;
 	const V4D& chrQ;
 	HkBone::HkBoneData* boneData = nullptr;
+	HkBone::HkBoneData* defaultBoneData = nullptr;
 	std::vector<std::unique_ptr<HkBone>> hkBones = {};
 	std::unordered_map<std::string, HkBone*> skeletonMap = {};
 };
