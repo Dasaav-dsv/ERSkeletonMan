@@ -51,9 +51,10 @@ namespace HkModifier {
 		RotateGlobal(V4D q) : q(q) {}
 		virtual RotateGlobal* clone() { return new RotateGlobal(*this); }
 
-		virtual void onApply(Bone* bone, BoneData& bData) 
+		virtual bool onApply(Bone* bone, BoneData& bData) 
 		{
 			bData.qSpatial = bone->getWorldQ().qMul(this->q);
+			return false;
 		}
 
 		V4D q;

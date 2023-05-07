@@ -226,13 +226,18 @@ public:
 	// Updates all bones and applies all modifiers.
 	void updateAll()
 	{
+		auto& modifiers = this->getAllModifiers();
+		auto skeletonModifiers = std::vector<HkModifier::Modifier*>(modifiers.size());
+		for (auto& modifier : modifiers) {
+			skeletonModifiers.push_back(modifier.get());
+		}
 		for (auto& bone : this->hkBones) {
 			if (!bone) continue;
 
 			// Get and apply all skeleton modifiers to every bone.
-			for (auto& modifier : this->getAllModifiers()) {
+			for (auto& modifier : skeletonModifiers) {
 				if (!modifier) continue;
-				bone->applyModifier(modifier.get());
+				if (bone->applyModifier(modifier)) modifier = nullptr;
 			}
 
 			bone->applyAllModifiers();

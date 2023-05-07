@@ -288,7 +288,7 @@ public:
 
 	V4D qConjugate() const
 	{
-		return _mm_or_ps(*this, _mm_set_ps(0.0f, -0.0f, -0.0f, -0.0f));
+		return _mm_xor_ps(*this, _mm_set_ps(0.0f, -0.0f, -0.0f, -0.0f));
 	}
 
 	V4D qTransform(const V4D v) const
@@ -392,5 +392,37 @@ public:
 		V4D v_ = v - *this * dot;
 
 		return *this * cosf(theta) + v_.normalize() * sinf(theta);
+	}
+
+	static V4D vmtxToQ(ViewMatrix* vmtx) // https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/#:~:text=z%20%3D%200.25f%20*%20s%3B%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D-,Alternative%20Method,-Christian%20has%20suggested
+	{
+		auto mtx = vmtx->mtx;
+		__m128 c1 = _mm_set1_ps(1.0f);
+		__m128 c2 = _mm_set1_ps(mtx[0][0]);
+		__m128 c3 = _mm_set1_ps(mtx[1][1]);
+		__m128 c4 = _mm_set1_ps(mtx[2][2]);
+
+		// Make sure the signed zeroes are not optimized away (looking at you MSVC)
+		__m128 sign = _mm_castsi128_ps(_mm_set_epi32(0x0, 0x80000000, 0x80000000, 0x0));
+		c2 = _mm_xor_ps(c2, sign);
+		sign = _mm_shuffle_ps(sign, sign, _MM_SHUFFLE(3, 2, 0, 1));
+		c4 = _mm_xor_ps(c4, sign);
+		sign = _mm_shuffle_ps(sign, sign, _MM_SHUFFLE(3, 1, 2, 0));
+		c3 = _mm_xor_ps(c3, sign);
+
+		__m128 result = _mm_add_ps(c1, c2);
+		result = _mm_add_ps(result, c3);
+		result = _mm_add_ps(result, c4);
+		result = _mm_max_ps(result, _mm_setzero_ps());
+		result = _mm_sqrt_ps(result);
+		result = _mm_mul_ps(result, _mm_set1_ps(0.5f));
+
+		sign = _mm_set_ps(0.0f, mtx[0][2], mtx[1][0], mtx[2][1]);
+		sign = _mm_sub_ps(sign, _mm_set_ps(0.0f, mtx[2][0], mtx[0][1], mtx[1][2]));
+		sign = _mm_and_ps(sign, _mm_castsi128_ps(_mm_set1_epi32(0x80000000)));
+
+		result = _mm_or_ps(result, sign);
+
+		return result;
 	}
 };
