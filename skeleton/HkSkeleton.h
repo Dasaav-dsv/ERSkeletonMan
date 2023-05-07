@@ -64,26 +64,34 @@ public:
 		inline bool applyModifier(HkModifier::Modifier* modifier);
 		inline void applyAllModifiers();
 
+		V4D getDefaultWorldQImpl()
+		{
+			V4D result;
+			if (this->defaultQ.isfinite()) {
+				return this->defaultQ;
+			}
+			else {
+				if (!!this->getParent()) {
+					result = this->getParent()->getDefaultWorldQImpl().qMul(this->getDefaultBoneData().qSpatial);
+				}
+				else {
+					result = this->getDefaultBoneData().qSpatial;
+				}
+			}
+			this->defaultQ = result;
+			return result;
+		}
+
 		// Calculates the world coordinates of a bone by recursively adding up bone offsets.
 		V4D getWorldPos()
 		{
-			V4D localPos = this->getBoneData().xzyVec;
 			HkBone* parent = this->getParent();
-			if (!parent || parent == this) {
-				return localPos + this->getSkeleton()->getChrPos();
-			}
-			else {
-				return localPos + parent->getWorldPos();
-			}
-		}
 
-		V4D getDefaultWorldQImpl()
-		{
-			if (!!this->getParent()) {
-				return this->getParent()->getDefaultWorldQImpl().qMul(this->getDefaultBoneData().qSpatial);
+			if (!parent) {
+				return this->getSkeleton()->getChrPos();
 			}
 			else {
-				return this->getDefaultBoneData().qSpatial;
+				return parent->getWorldPos() + this->getBoneData().xzyVec.qTransform(parent->getDefaultWorldQImpl());
 			}
 		}
 
@@ -124,8 +132,8 @@ public:
 		std::vector<HkBone*> children{};
 		std::string name{};
 
-		V4D worldPos{};
-		V4D worldQ{};
+		V4D defaultPos{ NAN };
+		V4D defaultQ{ NAN };
 
 		int16_t index = 0;
 	};
