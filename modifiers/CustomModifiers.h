@@ -46,6 +46,19 @@ namespace HkModifier {
 		float t = 0.0f;
 	};
 
+	class RotateGlobal : public Modifier {
+	public:
+		RotateGlobal(V4D q) : q(q) {}
+		virtual RotateGlobal* clone() { return new RotateGlobal(*this); }
+
+		virtual void onApply(Bone* bone, BoneData& bData) 
+		{
+			bData.qSpatial = bone->getWorldQ().qMul(this->q);
+		}
+
+		V4D q;
+	};
+
 	namespace SpEffect {
 		// Scales the bone's length, but only when a chosen SpEffect is applied to the character.
 		class ScaleLength : public Modifier {
