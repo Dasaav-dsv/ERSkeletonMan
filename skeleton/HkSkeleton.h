@@ -82,19 +82,6 @@ public:
 			return result;
 		}
 
-		// Calculates the world coordinates of a bone by recursively adding up bone offsets.
-		V4D getWorldPos()
-		{
-			HkBone* parent = this->getParent();
-
-			if (!parent) {
-				return this->getSkeleton()->getChrPos();
-			}
-			else {
-				return parent->getWorldPos() + this->getBoneData().xzyVec.qTransform(parent->getDefaultWorldQImpl());
-			}
-		}
-
 		// Calculates the world orientation of a bone by recursively multiplying orientation quaternions.
 		template <bool firstCall = true> V4D getWorldQ()
 		{
@@ -123,6 +110,30 @@ public:
 			}
 			else {
 				return result;
+			}
+		}
+
+		V4D getWorldVec()
+		{
+			HkBone* parent = this->getParent();
+			if (!parent) {
+				return this->getBoneData().xzyVec.qTransform(this->getSkeleton()->getChrQ());
+			}
+			else {
+				return this->getBoneData().xzyVec.qTransform(parent->getWorldQ());
+			}
+		}
+
+		// Calculates the world coordinates of a bone by recursively adding up bone offsets.
+		V4D getWorldPos()
+		{
+			HkBone* parent = this->getParent();
+
+			if (!parent) {
+				return this->getSkeleton()->getChrPos();
+			}
+			else {
+				return parent->getWorldPos() + this->getBoneData().xzyVec.qTransform(parent->getWorldQ());
 			}
 		}
 

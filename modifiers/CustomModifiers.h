@@ -51,13 +51,36 @@ namespace HkModifier {
 		RotateGlobal(V4D q) : q(q) {}
 		virtual RotateGlobal* clone() { return new RotateGlobal(*this); }
 
-		virtual bool onApply(Bone* bone, BoneData& bData) 
+		virtual bool onApply(Bone* bone, BoneData& bData)
 		{
 			bData.qSpatial = bone->getWorldQ().qMul(this->q);
 			return false;
 		}
 
 		V4D q;
+	};
+
+	class Constraint : public Modifier {
+	public:
+		Constraint(float maxSwingAngle) : maxMagSwing(sinf(maxSwingAngle * 0.5f)), maxMagW(cosf(maxSwingAngle * 0.5f)) {}
+		virtual Constraint* clone() { return new Constraint(*this); }
+
+		virtual bool onApply(Bone* bone, BoneData& bData)
+		{
+			V4D defq = bone->getDefaultBoneData().qSpatial;
+			V4D q = bData.qSpatial.qDiv(defq);
+			V4D vec = q.flatten<V4D::CoordinateAxis::W>();
+			if (vec.length2() > this->maxMagSwing * this->maxMagSwing) {
+				int w = *reinterpret_cast<int*>(&q[3]) & 0x80000000 | *reinterpret_cast<int*>(&this->maxMagW);
+				q = vec.normalize() * this->maxMagSwing;
+				q[3] = *reinterpret_cast<float*>(&w);
+			}
+			bData.qSpatial = q.qMul(defq);
+			return false;
+		}
+
+		float maxMagSwing;
+		float maxMagW;
 	};
 
 	namespace SpEffect {

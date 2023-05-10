@@ -197,6 +197,8 @@ public:
 
 	float length2() const
 	{
+		if (!this->isfinite()) return 0.0f;
+
 		V4D v = _mm_mul_ps(*this, *this);
 
 		return _mm_cvtss_f32(v.hadd());
