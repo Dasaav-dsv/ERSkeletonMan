@@ -23,7 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\faststring.h" />
-    <ClInclude Include="include\VFTHookTemplates.h" />
+    <ClInclude Include="include\HookTemplates.h" />
     <ClInclude Include="include\PE.h" />
     <ClInclude Include="include\PointerChain.h" />
     <ClInclude Include="include\RTTIScanner.h" />

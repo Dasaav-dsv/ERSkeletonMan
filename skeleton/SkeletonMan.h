@@ -119,11 +119,11 @@ public:
 		// - the final character instance initialization function
 		// - the character unload function
 		// - the character instance destructor
-		this->playerHooks.ctorHook = std::make_unique<VFTHookTemplate<HookTemplate::Return>>("CS::PlayerIns", 10, SkeletonMan::ctorHookFn);
+		this->playerHooks.ctorHook = std::make_unique<VFTHookTemplate<ExitHook>>("CS::PlayerIns", 10, SkeletonMan::ctorHookFn);
 		this->playerHooks.unloadHook = std::make_unique<VFTHook>("CS::PlayerIns", 11, SkeletonMan::dtorHookFn);
 		this->playerHooks.dtorHook = std::make_unique<VFTHook>("CS::PlayerIns", 1, SkeletonMan::dtorHookFn);
 
-		this->enemyHooks.ctorHook = std::make_unique<VFTHookTemplate<HookTemplate::Return>>("CS::EnemyIns", 10, SkeletonMan::ctorHookFn);
+		this->enemyHooks.ctorHook = std::make_unique<VFTHookTemplate<ExitHook>>("CS::EnemyIns", 10, SkeletonMan::ctorHookFn);
 		this->enemyHooks.unloadHook = std::make_unique<VFTHook>("CS::EnemyIns", 11, SkeletonMan::dtorHookFn);
 		this->enemyHooks.dtorHook = std::make_unique<VFTHook>("CS::EnemyIns", 1, SkeletonMan::dtorHookFn);
 
@@ -140,7 +140,7 @@ private:
 	bool isScannerOwner;
 
 	struct Hooks {
-		std::unique_ptr<VFTHookTemplate<HookTemplate::Return>> ctorHook{};
+		std::unique_ptr<VFTHookTemplate<ExitHook>> ctorHook{};
 		std::unique_ptr<VFTHook> unloadHook{};
 		std::unique_ptr<VFTHook> dtorHook{};
 	} playerHooks, enemyHooks;

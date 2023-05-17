@@ -56,7 +56,7 @@
     <ClInclude Include="matchers\BaseMatchers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\VFTHookTemplates.h">
+    <ClInclude Include="include\HookTemplates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="modifiers\CustomModifiers.h">
