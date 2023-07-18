@@ -130,6 +130,8 @@ public:
 		// This is a semi-unrelated havok function we hook for its good execution timing.
 		// It is used to update and apply all of the bone modifiers.
 		this->hkHook = std::make_unique<VFTHook>("CS::NoUpdateInterface", 10, SkeletonMan::hkHookFn);
+
+		return true;
 	}
 
 private:
