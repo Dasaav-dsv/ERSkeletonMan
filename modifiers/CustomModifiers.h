@@ -91,7 +91,10 @@ namespace HkModifier {
 			virtual ScaleLength* clone() { return new ScaleLength(*this); }
 
 		private:
-			virtual bool onApply(Bone* bone, BoneData& bData) { if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec *= this->scale; }
+			virtual bool onApply(Bone* bone, BoneData& bData) {
+				if (Impl::checkSpEffectID(bone->getSkeleton()->getChrIns(), ID)) bData.xzyVec *= this->scale;
+				return false;
+			}
 
 			float scale;
 			int ID;
